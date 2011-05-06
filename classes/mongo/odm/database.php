@@ -99,7 +99,7 @@ class Mongo_Odm_Database {
       if ($config === NULL)
       {
         // Load the configuration for this database
-        $config = Kohana::config('mongo')->$name;
+        $config = \Config::item('mongo')->$name;
       }
 
       new self($name,$config);
