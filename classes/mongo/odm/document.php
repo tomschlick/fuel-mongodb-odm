@@ -4,33 +4,33 @@
  *
  * 1. Table Data Gateway pattern
  * <code>
- * class Model_Post extends Mongo_Document {
+ * class Model_Post extends Mongo_Odm_Document {
  *   protected $name = 'posts';
  *   // All model-related code here
  * }
- * $post = Mongo_Document::factory('post', $post_id);
+ * $post = Mongo_Odm_Document::factory('post', $post_id);
  * </code>
  *
  * 2. Row Data Gateway pattern:
  * <code>
- * class Model_Post_Collection extends Mongo_Collection {
+ * class Model_Post_Collection extends Mongo_Odm_Collection {
  *   protected $name = 'posts';
  *   // Collection-related code here
  * }
- * class Model_Post extends Mongo_Document {
+ * class Model_Post extends Mongo_Odm_Document {
  *   // Document-related code here
  * }
- * $post = Mongo_Document::factory('post', $post_id);
+ * $post = Mongo_Odm_Document::factory('post', $post_id);
  * </code>
  *
  * The following examples could be used with either pattern with no differences in usage. The Row Data Gateway pattern is recommended
  * for more complex models to improve code organization while the Table Data Gateway pattern is recommended for simpler models.
  *
  * <code>
- *   class Model_Document extends Mongo_Document {
+ *   class Model_Document extends Mongo_Odm_Document {
  *     public $name = 'test';
  *   }
- *   $document = new Model_Document(); // or Mongo_Document::factory('document');
+ *   $document = new Model_Document(); // or Mongo_Odm_Document::factory('document');
  *   $document->name = 'Mongo';
  *   $document->type = 'db';
  *   $document->save();
@@ -111,17 +111,17 @@
  * Documents can have references to other documents which will be loaded lazily and saved automatically.
  *
  * <code>
- *   class Model_Post extends Mongo_Document {
+ *   class Model_Post extends Mongo_Odm_Document {
  *     protected $name = 'posts';
  *     protected $_references = array('user' => array('model' => 'user'));
  *   }
  *
- *   class Model_User extends Mongo_Document {
+ *   class Model_User extends Mongo_Odm_Document {
  *     protected $name = 'users';
  *   }
  *
- *   $user = Mongo_Document::factory('user')->set('id','colin')->set('email','colin@mollenhour.com');
- *   $post = Mongo_Document::factory('post');
+ *   $user = Mongo_Odm_Document::factory('user')->set('id','colin')->set('email','colin@mollenhour.com');
+ *   $post = Mongo_Odm_Document::factory('post');
  *   $post->user = $user;
  *   $post->title = 'MongoDb';
  *   $post->save()
@@ -138,22 +138,24 @@
  * </code>
  *
  * @author  Colin Mollenhour
- * @package Mongo_Database
+ * @package Mongo_Odm_Database
  */
 
-abstract class Mongo_Document {
+namespace Mongodb_Odm;
+
+abstract class Mongo_Odm_Document {
 
   const SAVE_INSERT = 'insert';
   const SAVE_UPDATE = 'update';
   const SAVE_UPSERT = 'upsert';
 
   /**
-   * Instantiate an object conforming to Mongo_Document conventions.
+   * Instantiate an object conforming to Mongo_Odm_Document conventions.
    * The document is not loaded until load() is called.
    *
    * @param   string  model name
    * @param   mixed   optional _id of document to operate on or criteria for loading (if you expect it exists)
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public static function factory($name, $load = NULL)
   {
@@ -163,21 +165,21 @@ abstract class Mongo_Document {
 
   /** The name of the collection within the database or the gridFS prefix if gridFS is TRUE
    *
-   *  If using a corresponding Mongo_Collection subclass, set this only in the Mongo_Collection subclass.
+   *  If using a corresponding Mongo_Odm_Collection subclass, set this only in the Mongo_Odm_Collection subclass.
    *
    *  @var  string */
   protected $name;
 
-  /** The database configuration name (passed to Mongo_Database::instance() )
+  /** The database configuration name (passed to Mongo_Odm_Database::instance() )
    *
-   *  If using a corresponding Mongo_Collection subclass, set this only in the Mongo_Collection subclass.
+   *  If using a corresponding Mongo_Odm_Collection subclass, set this only in the Mongo_Odm_Collection subclass.
    *
    *  @var  string */
   protected $db = 'default';
 
   /** Whether or not this collection is a gridFS collection
    *
-   *  If using a corresponding Mongo_Collection subclass, set this only in the Mongo_Collection subclass.
+   *  If using a corresponding Mongo_Odm_Collection subclass, set this only in the Mongo_Odm_Collection subclass.
    *
    *  @var  boolean */
   protected $gridFS = FALSE;
@@ -250,7 +252,7 @@ abstract class Mongo_Document {
    *  @var  boolean */
   protected $_loaded = NULL;
 
-  /** A cache of Mongo_Collection instances for performance
+  /** A cache of Mongo_Odm_Collection instances for performance
    *  @static  array */
   protected static $collections = array();
 
@@ -362,7 +364,7 @@ abstract class Mongo_Document {
   /**
    * Clear the document data
    *
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function clear()
   {
@@ -391,9 +393,9 @@ abstract class Mongo_Document {
   }
 
   /**
-   * Return the Mongo_Database reference (proxy to the collection's db() method)
+   * Return the Mongo_Odm_Database reference (proxy to the collection's db() method)
    *
-   * @return  Mongo_Database
+   * @return  Mongo_Odm_Database
    */
   public function db()
   {
@@ -404,7 +406,7 @@ abstract class Mongo_Document {
    * Get a corresponding collection singleton
    *
    * @param  boolean  $fresh  Pass TRUE if you don't want to get the singleton instance
-   * @return Mongo_Collection
+   * @return Mongo_Odm_Collection
    */
   public function collection($fresh = FALSE)
   {
@@ -412,7 +414,7 @@ abstract class Mongo_Document {
     {
       if($this->name)
       {
-        return new Mongo_Collection($this->name, $this->db, $this->gridFS, get_class($this));
+        return new Mongo_Odm_Collection($this->name, $this->db, $this->gridFS, get_class($this));
       }
       else
       {
@@ -426,7 +428,7 @@ abstract class Mongo_Document {
       $name = "$this->db.$this->name.$this->gridFS";
       if( ! isset(self::$collections[$name]))
       {
-        self::$collections[$name] = new Mongo_Collection($this->name, $this->db, $this->gridFS, get_class($this));
+        self::$collections[$name] = new Mongo_Odm_Collection($this->name, $this->db, $this->gridFS, get_class($this));
       }
       return self::$collections[$name];
     }
@@ -448,7 +450,7 @@ abstract class Mongo_Document {
    *
    * @param  string $name
    * @param  array  $arguments
-   * @return Mongo_Collection
+   * @return Mongo_Odm_Collection
    */
   public function __call($name, $arguments)
   {
@@ -465,7 +467,7 @@ abstract class Mongo_Document {
         if( ! isset($this->_searches[$search])){
           trigger_error('Predefined search not found by '.get_class($this).': '.$search);
         }
-        return Mongo_Document::factory($this->_searches[$search]['model'])
+        return Mongo_Odm_Document::factory($this->_searches[$search]['model'])
                 ->collection(TRUE)
                 ->find(array($this->_searches[$search]['field'] => $this->_id));
       break;
@@ -500,7 +502,7 @@ abstract class Mongo_Document {
         $value = $this->__get($id_field);
         if( ! empty($this->_references[$name]['multiple']))
         {
-          $this->_related_objects[$name] = Mongo_Document::factory($model)
+          $this->_related_objects[$name] = Mongo_Odm_Document::factory($model)
                   ->collection(TRUE)
                   ->find(array('_id' => array('$in' => (array) $value)));
         }
@@ -511,7 +513,7 @@ abstract class Mongo_Document {
           {
             $value = $value['$id'];
           }
-          $this->_related_objects[$name] = Mongo_Document::factory($model, $value);
+          $this->_related_objects[$name] = Mongo_Odm_Document::factory($model, $value);
         }
       }
       return $this->_related_objects[$name];
@@ -552,12 +554,12 @@ abstract class Mongo_Document {
   {
     $name = $this->get_field_name($name, FALSE);
 
-    // Automatically save references to other Mongo_Document objects
+    // Automatically save references to other Mongo_Odm_Document objects
     if(array_key_exists($name, $this->_references))
     {
-      if( ! $value instanceof Mongo_Document)
+      if( ! $value instanceof Mongo_Odm_Document)
       {
-        throw new Exception('Cannot set reference to object that is not a Mongo_Document');
+        throw new Exception('Cannot set reference to object that is not a Mongo_Odm_Document');
       }
       $this->_related_objects[$name] = $value;
       if(isset($value->_id))
@@ -594,7 +596,7 @@ abstract class Mongo_Document {
    *
    * @param   string  $name The key of the data to update (use dot notation for embedded objects)
    * @param   mixed   $value The data to be saved
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function set($name, $value)
   {
@@ -611,7 +613,7 @@ abstract class Mongo_Document {
    * Unset a key
    *
    * @param   string  $name The key of the data to update (use dot notation for embedded objects)
-   * @return Mongo_Document
+   * @return Mongo_Odm_Document
    */
   public function _unset($name)
   {
@@ -625,7 +627,7 @@ abstract class Mongo_Document {
    *
    * @param   string  $name The key of the data to update (use dot notation for embedded objects)
    * @param   mixed   $value The amount to increment by (default is 1)
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function inc($name, $value = 1)
   {
@@ -646,7 +648,7 @@ abstract class Mongo_Document {
    *
    * @param   string  $name The key of the data to update (use dot notation for embedded objects)
    * @param   mixed   $value The value to push
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function push($name, $value)
   {
@@ -674,7 +676,7 @@ abstract class Mongo_Document {
    *
    * @param   string  $name The key of the data to update (use dot notation for embedded objects)
    * @param   array   $value An array of values to push
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function pushAll($name, $value)
   {
@@ -694,7 +696,7 @@ abstract class Mongo_Document {
    * Pop a value from the end of an array
    *
    * @param   string  $name The key of the data to update (use dot notation for embedded objects)
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function pop($name)
   {
@@ -707,7 +709,7 @@ abstract class Mongo_Document {
    * Pop a value from the beginning of an array
    *
    * @param   string  $name The key of the data to update (use dot notation for embedded objects)
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function shift($name)
   {
@@ -721,7 +723,7 @@ abstract class Mongo_Document {
    *
    * @param   string  $name The key of the data to update (use dot notation for embedded objects)
    * @param   mixed   $value
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function pull($name, $value)
   {
@@ -749,7 +751,7 @@ abstract class Mongo_Document {
    *
    * @param   string  $name The key of the data to update (use dot notation for embedded objects)
    * @param   array   $value An array of value to pull from the array
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function pullAll($name, $value)
   {
@@ -769,7 +771,7 @@ abstract class Mongo_Document {
    * Bit operators
    *
    * @param   string  $name The key of the data to update (use dot notation for embedded objects)
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function bit($name,$value)
   {
@@ -783,7 +785,7 @@ abstract class Mongo_Document {
    *
    * @param   string  $name The key of the data to update (use dot notation for embedded objects)
    * @param   mixed   $value  The value to add to the set
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function addToSet($name, $value)
   {
@@ -819,7 +821,7 @@ abstract class Mongo_Document {
    *
    * @param   array    field => value pairs
    * @param   boolean  values are clean (from database)?
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function load_values($values, $clean = FALSE)
   {
@@ -962,7 +964,7 @@ abstract class Mongo_Document {
    * Save the document to the database. For newly created documents the _id will be retrieved.
    *
    * @param   boolean  $safe  If FALSE the insert status will not be checked
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function save($safe = TRUE)
   {
@@ -1049,7 +1051,7 @@ abstract class Mongo_Document {
   {
     foreach($this->_references as $name => $ref)
     {
-      if(isset($this->_related_objects[$name]) && $this->_related_objects[$name] instanceof Mongo_Document)
+      if(isset($this->_related_objects[$name]) && $this->_related_objects[$name] instanceof Mongo_Odm_Document)
       {
         $model = $this->_related_objects[$name];
         $id_field = isset($ref['field']) ? $ref['field'] : "_$name";
@@ -1064,14 +1066,14 @@ abstract class Mongo_Document {
   /**
    * Override this method to take certain actions before the data is saved
    *
-   * @param   string  $action  The type of save action, one of Mongo_Document::SAVE_*
+   * @param   string  $action  The type of save action, one of Mongo_Odm_Document::SAVE_*
    */
   protected function before_save($action){}
 
   /**
    * Override this method to take actions after data is saved
    *
-   * @param   string  $action  The type of save action, one of Mongo_Document::SAVE_*
+   * @param   string  $action  The type of save action, one of Mongo_Odm_Document::SAVE_*
    */
   protected function after_save($action){}
 
@@ -1099,7 +1101,7 @@ abstract class Mongo_Document {
    * Upsert the document, does not retrieve the _id of the upserted document.
    *
    * @param   array $operations
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function upsert($operations = array())
   {
@@ -1129,7 +1131,7 @@ abstract class Mongo_Document {
    * Delete the current document using the current data. The document does not have to be loaded.
    * Use $doc->collection()->remove($criteria) to delete multiple documents.
    *
-   * @return  Mongo_Document
+   * @return  Mongo_Odm_Document
    */
   public function delete()
   {

@@ -1,10 +1,10 @@
-h1. MongoDb PHP ODM
+h1. Mongodb ODM
 
-~(for lack of a better title)~
+This is a port of Colin Mollenhour's "Mongodb PHP ODM":https://github.com/colinmollenhour/mongodb-php-odm for Kohana
 
 h2. Overview
 
-MongoDb PHP ODM is a simple object wrapper for the Mongo PHP driver classes which makes using Mongo in your PHP application more like ORM, but _without_ the suck. It is designed for use with "Kohana 3":http://github.com/kohana/core but will also integrate easily with any PHP application with almost no additional effort.
+Mongodb ODM is a simple object wrapper for the Mongo PHP driver classes which makes using Mongo in your PHP application more like ORM, but _without_ the suck. It is designed for use with "Kohana 3":http://github.com/kohana/core but will also integrate easily with any PHP application with almost no additional effort.
 
 h2. Design Principles
 

@@ -4,23 +4,23 @@
  * When used with Kohana it can be instantiated simply by:
  *
  * <code>
- *  $db = Mongo_Database::instance();
+ *  $db = Mongo_Odm_Database::instance();
  * </code>
  * 
  * The above will assume the 'default' configuration from the APPPATH/config/mongo.php file.
  * Alternatively it may be instantiated with the name and configuration specified as arguments:
  *
  * <code>
- *   $db = Mongo_Database::instance('test', array(
+ *   $db = Mongo_Odm_Database::instance('test', array(
  *     'database' => 'test'
  *   ));
  * </code>
  *
- * The Mongo_Collection class will gain access to the server by calling the instance method with a configuration name,
+ * The Mongo_Odm_Collection class will gain access to the server by calling the instance method with a configuration name,
  * so if not using Kohana or the configuration name is not present in the config file then the instance should be created
- * before using any classes that extend Mongo_Collection or Mongo_Document.
+ * before using any classes that extend Mongo_Odm_Collection or Mongo_Odm_Document.
  *
- * Mongo_Database can proxy all methods of MongoDB to the database instance as well as select collections using the __get
+ * Mongo_Odm_Database can proxy all methods of MongoDB to the database instance as well as select collections using the __get
  * magic method.
  *
  * If using Kohana, profiling can be enabled/disabled via the configuration or on demand by setting the profiling property.
@@ -44,12 +44,14 @@
  * @method int setProfilingLevel()  setProfilingLevel( int $level )
  *
  * @author  Colin Mollenhour
- * @package Mongo_Database
+ * @package Mongo_Odm_Database
  *
  * This class was adapted from http://github.com/Wouterrr/MangoDB
  */
 
-class Mongo_Database {
+namespace Mongodb_Odm;
+
+class Mongo_Odm_Database {
 
   /* See http://bsonspec.org */
   const TYPE_DOUBLE        = 1;
@@ -71,12 +73,12 @@ class Mongo_Database {
   const TYPE_MIN_KEY       = 255;
   const TYPE_MAX_KEY       = 127;
 
-  /** Mongo_Database instances
+  /** Mongo_Odm_Database instances
    *  @static  array */
   protected static $instances = array();
 
   /**
-   * Get a Mongo_Database instance. Configuration options are:
+   * Get a Mongo_Odm_Database instance. Configuration options are:
    *
    * <pre>
    *  server      A server connection string. See Mongo::__construct()
@@ -87,7 +89,7 @@ class Mongo_Database {
    *
    * @param   string $name   The configuration name
    * @param   array $config  Pass a configuration array to bypass the Kohana config
-   * @return  Mongo_Database
+   * @return  Mongo_Odm_Database
    * @static
    */
   public static function instance($name = 'default', array $config = NULL)
@@ -106,7 +108,7 @@ class Mongo_Database {
     return self::$instances[$name];
   }
 
-  /** Mongo_Database instance name
+  /** Mongo_Odm_Database instance name
    *  @var  string */
   protected $_name;
 
@@ -122,7 +124,7 @@ class Mongo_Database {
    *  @var  MongoDB */
   protected $_db;
 
-  /** The class name for the MongoCollection wrapper. Defaults to Mongo_Collection.
+  /** The class name for the MongoCollection wrapper. Defaults to Mongo_Odm_Collection.
    * @var string */
   protected $_collection_class;
 
@@ -139,7 +141,7 @@ class Mongo_Database {
   protected $_stop_callback = array('Profiler','stop');
 
   /**
-   * This cannot be called directly, use Mongo_Database::instance() instead to get an instance of this class.
+   * This cannot be called directly, use Mongo_Odm_Database::instance() instead to get an instance of this class.
    *
    * @param  string  $name  The configuration name
    * @param  array  $config The configuration data
@@ -166,7 +168,7 @@ class Mongo_Database {
     $this->_db = $config['database'];
 
     // Set the collection class name
-    $this->_collection_class = (isset($config['collection']) ? $config['collection'] : 'Mongo_Collection');
+    $this->_collection_class = (isset($config['collection']) ? $config['collection'] : 'Mongo_Odm_Collection');
     
     // Save profiling option in a public variable
     $this->profiling = (isset($config['profiling']) && $config['profiling']);
@@ -207,7 +209,7 @@ class Mongo_Database {
     {
       if($this->profiling)
       {
-        $_bm = $this->profiler_start("Mongo_Database::{$this->_name}","connect()");
+        $_bm = $this->profiler_start("Mongo_Odm_Database::{$this->_name}","connect()");
       }
 
       $this->_connected = $this->_connection->connect();
@@ -270,7 +272,7 @@ class Mongo_Database {
     {
       $json_arguments = array(); foreach($arguments as $arg) $json_arguments[] = json_encode((is_array($arg) ? (object)$arg : $arg));
       $method = ($name == 'command' ? 'runCommand' : $name);
-      $_bm = $this->profiler_start("Mongo_Database::{$this->_name}","db.$method(".implode(',',$json_arguments).")");
+      $_bm = $this->profiler_start("Mongo_Odm_Database::{$this->_name}","db.$method(".implode(',',$json_arguments).")");
     }
 
     $retval = call_user_func_array(array($this->_db, $name), $arguments);
@@ -325,10 +327,10 @@ class Mongo_Database {
   }
 
   /**
-   * Get a Mongo_Collection instance (wraps MongoCollection)
+   * Get a Mongo_Odm_Collection instance (wraps MongoCollection)
    * 
    * @param  string  $name
-   * @return Mongo_Collection
+   * @return Mongo_Odm_Collection
    */
   public function selectCollection($name)
   {
@@ -337,10 +339,10 @@ class Mongo_Database {
   }
 
   /**
-   * Get a Mongo_Collection instance with grid FS enabled (wraps MongoCollection)
+   * Get a Mongo_Odm_Collection instance with grid FS enabled (wraps MongoCollection)
    *
    * @param  string  $prefix
-   * @return Mongo_Collection
+   * @return Mongo_Odm_Collection
    */
   public function getGridFS($prefix = 'fs')
   {
@@ -352,7 +354,7 @@ class Mongo_Database {
    * Fetch a collection by using object access syntax
    *
    * @param  string  $name  The collection name to select
-   * @return  Mongo_Collection
+   * @return  Mongo_Odm_Collection
    */
   public function __get($name)
   {
@@ -392,7 +394,7 @@ class Mongo_Database {
   }
 
   /**
-   * Allows one to override the default Mongo_Collection class.
+   * Allows one to override the default Mongo_Odm_Collection class.
    *
    * @param string $class_name
    */
