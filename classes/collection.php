@@ -4,61 +4,61 @@
  *
  * 1. Directly as a wrapper for MongoCollection/MongoCursor:
  * <code>
- * $posts = new Mongo_Odm_Collection('posts');
+ * $posts = new Mongo_Odm\Collection('posts');
  * $posts->sort_desc('published')->limit(10)->as_array(); // array of arrays
  * </code>
  *
  * 2. As part of the Table Data Gateway pattern
  * <code>
- * class Model_Post extends Mongo_Odm_Document {
+ * class Model_Post extends Document {
  *   protected $name = 'posts';
  *   // All model-related code here
  * }
- * $posts = Mongo_Odm_Document::factory('post')->collection(TRUE);
+ * $posts = Mongo_Odm\Document::factory('post')->collection(TRUE);
  * $posts->sort_desc('published')->limit(10)->as_array(); // array of Model_Post
  * </code>
  *
  * 3. As part of the Row Data Gateway pattern:
  * <code>
- * class Model_Post_Collection extends Mongo_Odm_Collection {
+ * class Model_Post_Collection extends Mongo_Odm\Collection {
  *   protected $name = 'posts';
  *   // Collection-related code here
  * }
- * class Model_Post extends Mongo_Odm_Document {
+ * class Model_Post extends Document {
  *   // Document-related code here
  * }
- * $posts = Mongo_Odm_Document::factory('post')->collection(TRUE);
+ * $posts = Mongo_Odm\Document::factory('post')->collection(TRUE);
  * $posts->sort_desc('published')->limit(10)->as_array(); // array of Model_Post
  * </code>
  *
  * @author  Colin Mollenhour
- * @package Mongo_Odm_Database
+ * @package Database
  */
 
-namespace Mongodb_Odm;
+namespace Mongo_Odm;
 
-class Mongo_Odm_Collection implements Iterator, Countable {
+class Collection implements \Iterator, \Countable {
 
   const ASC = 1;
   const DESC = -1;
 
   /**
-   * Instantiate an object conforming to Mongo_Odm_Collection conventions.
+   * Instantiate an object conforming to Collection conventions.
    *
    * @param   string  $name The model name to instantiate
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    * @deprecated
    */
   public static function factory($name)
   {
-    return Mongo_Odm_Document::factory($name)->collection(TRUE);
+    return Document::factory($name)->collection(TRUE);
   }
 
   /** The name of the collection within the database or the gridFS prefix if gridFS is TRUE
    *  @var  string */
   protected $name;
 
-  /** The database configuration name (passed to Mongo_Odm_Database::instance() )
+  /** The database configuration name (passed to Database::instance() )
    *  @var  string  */
   protected $db = 'default';
 
@@ -90,7 +90,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    *  @static  array */
   protected static $collections = array();
 
-  /** A cache of Mongo_Odm_Document model instances for performance
+  /** A cache of Document model instances for performance
    *  @static  array */
   protected static $models = array();
 
@@ -126,7 +126,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
   /**
    * Reset the state of the query (must be called manually if re-using a collection for a new query)
    *
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    */
   public function reset($cursor_only = FALSE)
   {
@@ -156,7 +156,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
       if($this->db()->profiling && in_array($name,array('batchInsert','findOne','getDBRef','group','insert','remove','save','update')))
       {
         $json_arguments = array(); foreach($arguments as $arg) $json_arguments[] = json_encode((is_array($arg) ? (object)$arg : $arg));
-        $bm = $this->db()->profiler_start("Mongo_Odm_Database::$this->db","db.$this->name.$name(".implode(',',$json_arguments).")");
+        $bm = $this->db()->profiler_start("Mongo_Odm\Database::$this->db","db.$this->name.$name(".implode(',',$json_arguments).")");
       }
 
       $return = call_user_func_array(array($this->collection(), $name), $arguments);
@@ -169,17 +169,17 @@ class Mongo_Odm_Collection implements Iterator, Countable {
       return $return;
     }
 
-    trigger_error('Method not found by Mongo_Odm_Collection: '.$name);
+    trigger_error('Method not found by Mongo_Odm\Collection: '.$name);
   }
 
   /**
-   * Get the Mongo_Odm_Database instance used for this collection
+   * Get the Mongo_Odm\Database instance used for this collection
    *
-   * @return  Mongo_Odm_Database
+   * @return  Database
    */
   public function db()
   {
-    return Mongo_Odm_Database::instance($this->db);
+    return Database::instance($this->db);
   }
 
   /**
@@ -211,7 +211,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    *
    * @param   mixed $query  An array of paramters or a key
    * @param   mixed $value  If $query is a key, this is the value
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    */
   public function find($query = array(), $value = NULL)
   {
@@ -223,7 +223,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
         $query = JSON::arr($query);
         if($query === NULL)
         {
-          throw new Exception('Unable to parse query from JSON string.');
+          throw new \MongoException('Unable to parse query from JSON string.');
         }
       }
       else
@@ -273,7 +273,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    * Add fields to be returned by the query.
    *
    * @param   array $fields
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    */
   public function fields($fields = array(), $include = 1)
   {
@@ -298,7 +298,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    * Gives the database a hint about the query
    *
    * @param   array
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    */
   public function hint(array $key_pattern)
   {
@@ -309,7 +309,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    * Sets whether this cursor will timeout
    *
    * @param   boolean
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    */
   public function immortal($liveForever = TRUE)
   {
@@ -320,7 +320,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    * Limits the number of results returned
    *
    * @param   int
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    */
   public function limit($num)
   {
@@ -331,7 +331,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    * Skips a number of results
    *
    * @param   int
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    */
   public function skip($num)
   {
@@ -342,7 +342,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    * Sets whether this query can be done on a slave
    *
    * @param   boolean
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    */
   public function slaveOkay($okay = TRUE)
   {
@@ -352,7 +352,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
   /**
    * Use snapshot mode for the query
    *
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    */
   public function snapshot()
   {
@@ -364,7 +364,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    *
    * @param   mixed  A sort criteria or a key (requires corresponding $value)
    * @param   mixed  The direction if $fields is a key
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    */
   public function sort($fields, $direction = self::ASC)
   {
@@ -401,7 +401,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    * Sorts the results ascending by the given field
    *
    * @param   string  The field name to sort by
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    */
   public function sort_asc($field)
   {
@@ -412,7 +412,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    * Sorts the results descending by the given field
    *
    * @param   string  The field name to sort by
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    */
   public function sort_desc($field)
   {
@@ -423,7 +423,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    * Sets whether this cursor will be left open after fetching the last results
    *
    * @param   boolean
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    */
   public function tailable($tail = TRUE)
   {
@@ -467,7 +467,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    *
    * @param  string  $name
    * @param  mixed  $value
-   * @return Mongo_Odm_Collection
+   * @return Collection
    */
   public function set_option($name, $value)
   {
@@ -501,7 +501,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    * Unset a cursor option to be set before executing the query.
    *
    * @param  string  $name
-   * @return Mongo_Odm_Collection
+   * @return Collection
    */
   public function unset_option($name)
   {
@@ -535,7 +535,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
     }
     $info = $this->_cursor->info();
     if( ! isset($info['started_iterating'])) {
-      throw new Exception('Driver version >= 1.0.10 required.');
+      throw new \MongoException('Driver version >= 1.0.10 required.');
     }
     return $info['started_iterating'];
   }
@@ -544,7 +544,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
    * Instantiates a cursor, after this is called the query cannot be modified.
    * This is automatically called when the iterator initializes (rewind).
    *
-   * @return  Mongo_Odm_Collection
+   * @return  Collection
    */
   public function load($skipBenchmark = FALSE)
   {
@@ -557,7 +557,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
       throw new MongoCursorException("{$e->getMessage()}: {$this->inspect()}", $e->getCode());
     }
     catch(MongoException $e) {
-      throw new MongoException("{$e->getMessage()}: {$this->inspect()}", $e->getCode());
+      throw new \MongoException("{$e->getMessage()}: {$this->inspect()}", $e->getCode());
     }
 
     // Add cursor options
@@ -587,7 +587,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
         $query = JSON::arr($query);
         if($query === NULL)
         {
-          throw new Exception('Unable to parse query from JSON string.');
+          throw new \MongoException('Unable to parse query from JSON string.');
         }
       }
       else
@@ -652,7 +652,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
     $result = $this->__call('group', array($keys, $initial, $reduce, $options));
     if( empty($result['ok'])) {
       $message = json_encode($result); //isset($result['errmsg']) ? $result['errmsg'] : ;
-      throw new MongoException($message);
+      throw new \MongoException($message);
     }
     return $result['retval'];
   }
@@ -673,7 +673,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
     $options = array_merge(array('safe' => TRUE, 'multiple' => FALSE, 'upsert' => FALSE), $options);
     $result = $this->update($criteria, $update, $options);
     if( ! $result['ok']) {
-      throw new MongoException($result['err']);
+      throw new \MongoException($result['err']);
     }
     if($options['multiple']) {
       return $result['n'];
@@ -686,7 +686,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
   /**
    * Get an instance of the corresponding document model.
    *
-   * @return  Mongo_Odm_Document
+   * @return  Document
    */
   protected function get_model()
   {
@@ -849,7 +849,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
       // Profile count operation for cursor
       if($this->db()->profiling)
       {
-        $bm = $this->db()->profiler_start("Mongo_Odm_Database::$this->db",$this->inspect().".count(".JSON::str($query).")");
+        $bm = $this->db()->profiler_start("Database::$this->db",$this->inspect().".count(".JSON::str($query).")");
       }
 
       $this->_cursor OR $this->load(TRUE);
@@ -863,7 +863,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
         $query = JSON::arr($query);
         if($query === NULL)
         {
-          throw new Exception('Unable to parse query from JSON string.');
+          throw new \MongoException('Unable to parse query from JSON string.');
         }
       }
       $query_trans = array();
@@ -876,7 +876,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
       // Profile count operation for collection
       if($this->db()->profiling)
       {
-        $bm = $this->db()->profiler_start("Mongo_Odm_Database::$this->db","db.$this->name.count(".($query ? JSON::str($query):'').")");
+        $bm = $this->db()->profiler_start("Database::$this->db","db.$this->name.count(".($query ? JSON::str($query):'').")");
       }
 
       $count = $this->collection()->count($query);
@@ -902,16 +902,16 @@ class Mongo_Odm_Collection implements Iterator, Countable {
   }
 
   /**
-   * Implement MongoCursor#getNext so that the return value is a Mongo_Odm_Document instead of array
+   * Implement MongoCursor#getNext so that the return value is a Document instead of array
    *
-   * @return  Mongo_Odm_Document
+   * @return  Document
    */
   public function getNext()
   {
     if( $this->db()->profiling && ( ! $this->_cursor || ! $this->is_iterating() ) )
     {
       $this->cursor();
-      $bm = $this->db()->profiler_start("Mongo_Odm_Database::$this->db", $this->inspect());
+      $bm = $this->db()->profiler_start("Database::$this->db", $this->inspect());
       $this->cursor()->next();
       $this->db()->profiler_stop($bm);
     }
@@ -968,7 +968,7 @@ class Mongo_Odm_Collection implements Iterator, Countable {
     {
       if($this->db()->profiling)
       {
-        $bm = $this->db()->profiler_start("Mongo_Odm_Database::$this->db", $this->inspect());
+        $bm = $this->db()->profiler_start("Database::$this->db", $this->inspect());
         $this->cursor()->rewind();
         $this->db()->profiler_stop($bm);
       }
@@ -978,10 +978,10 @@ class Mongo_Odm_Collection implements Iterator, Countable {
       }
     }
     catch(MongoCursorException $e) {
-      throw new MongoCursorException("{$e->getMessage()}: {$this->inspect()}", $e->getCode());
+      throw new \MongoCursorException("{$e->getMessage()}: {$this->inspect()}", $e->getCode());
     }
     catch(MongoException $e) {
-      throw new MongoException("{$e->getMessage()}: {$this->inspect()}", $e->getCode());
+      throw new \MongoException("{$e->getMessage()}: {$this->inspect()}", $e->getCode());
     }
   }
 
