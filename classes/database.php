@@ -49,9 +49,9 @@
  * This class was adapted from http://github.com/Wouterrr/MangoDB
  */
 
-namespace Mongodb_Odm;
+namespace Mongo_Odm;
 
-class Mongo_Odm_Database {
+class Database {
 
   /* See http://bsonspec.org */
   const TYPE_DOUBLE        = 1;
@@ -88,25 +88,30 @@ class Mongo_Odm_Database {
    * </pre>
    *
    * @param   string $name   The configuration name
-   * @param   array $config  Pass a configuration array to bypass the Kohana config
+   * @param   array $config  Pass a configuration array to bypass the config
    * @return  Mongo_Odm_Database
    * @static
    */
-  public static function instance($name = 'default', array $config = NULL)
-  {
-    if( ! isset(self::$instances[$name]) )
-    {
-      if ($config === NULL)
-      {
-        // Load the configuration for this database
-        $config = \Config::item('mongo')->$name;
-      }
+	public static function instance($name = 'default', array $config = null)
+	{
+		if (\array_key_exists($name, static::$instances))
+		{
+			return static::$instances[$name];
+		}
 
-      new self($name,$config);
-    }
+		if (empty(static::$instances))
+		{
+			\Config::load('mongo', true);
+		}
+		if ($config === null and ! ($config = \Config::get('mongo.'.$name)))
+		{
+			throw new \Exception('No valid configuration was provided.');
+		}
 
-    return self::$instances[$name];
-  }
+		static::$instances[$name] = new static($name, $config);
+
+		return static::$instances[$name];
+	}
 
   /** Mongo_Odm_Database instance name
    *  @var  string */
@@ -154,15 +159,28 @@ class Mongo_Odm_Database {
     $options = array(
       'connect' => FALSE  // Do not connect yet
     );
+
     if(isset($config['options']))
+	{
       $options = array_merge($options, $config['options']);
-
+	}
+	
     // Use the default server string if no server option is given
-    $server = isset($config['server'])
-                ? $config['server']
-                : "mongodb://".ini_get('mongo.default_host').":".ini_get('mongo.default_port');
-
-    $this->_connection = new Mongo($server, $options);
+	empty($config['hostname']) and $config['hostname'] = ini_get('mongo.default_host');
+	empty($config['port']) and $config['port'] = ini_get('mongo.default_port');
+	
+	$connection_string = "mongodb://";
+	
+	if ( ! empty($config['username']) and ! empty($config['password']))
+	{
+		$connection_string .= "{$config['username']}:{$config['password']}@";
+	}
+	
+	$connection_string .= "{$config['hostname']}:{$config['port']}";
+	
+	$connection_string .= "/{$config['database']}";
+	
+    $this->_connection = new \Mongo($connection_string, $options);
     
     // Save the database name for later use
     $this->_db = $config['database'];
