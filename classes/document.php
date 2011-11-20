@@ -418,7 +418,7 @@ abstract class Document {
       }
       else
       {
-        $class_name = get_class($this).'_Collection';
+        $class_name = $this->get_collection_class_name();
         return new $class_name(NULL, NULL, NULL, get_class($this));
       }
     }
@@ -434,7 +434,7 @@ abstract class Document {
     }
     else
     {
-      $name = get_class($this).'_Collection';
+      $name = $this->get_collection_class_name();
       if( ! isset(self::$collections[$name]))
       {
         self::$collections[$name] = new $name(NULL, NULL, NULL, get_class($this));
@@ -443,6 +443,15 @@ abstract class Document {
     }
   }
 
+  /**
+   * Generates the collection name
+   * @return  string
+   */
+  protected function get_collection_class_name()
+  {
+    return get_class($this).'_Collection';
+  }
+  
   /**
    * Current magic methods supported:
    *
@@ -454,6 +463,13 @@ abstract class Document {
    */
   public function __call($name, $arguments)
   {
+  	// Workaround Reserved Keyword 'unset'
+  	// http://php.net/manual/en/reserved.keywords.php
+  	if($name == 'unset')
+  	{
+  		return $this->_unset($arguments[0]);
+  	}
+  	
     $parts = explode('_', $name, 2);
     if( ! isset($parts[1]))
     {
@@ -497,18 +513,26 @@ abstract class Document {
     {
       if( ! isset($this->_related_objects[$name]))
       {
-        $id_field = isset($this->_references[$name]['field']) ? $this->_references[$name]['field'] : "_$name";
         $model = isset($this->_references[$name]['model']) ? $this->_references[$name]['model'] : $name;
+        $foreign_field = isset($this->_references[$name]['foreign_field']) ? $this->_references[$name]['foreign_field'] : FALSE;
+        if ($foreign_field) {
+        		$this->_related_objects[$name] = Mongo_Document::factory($model)
+        		->collection(TRUE)
+        		->find($foreign_field, $this->id);
+        		return $this->_related_objects[$name];
+        }
+        $id_field = isset($this->_references[$name]['field']) ? $this->_references[$name]['field'] : "_$name";
         $value = $this->__get($id_field);
+        
         if( ! empty($this->_references[$name]['multiple']))
         {
-          $this->_related_objects[$name] = Document::factory($model)
-                  ->collection(TRUE)
-                  ->find(array('_id' => array('$in' => (array) $value)));
+        		$this->_related_objects[$name] = Mongo_Document::factory($model)
+        				->collection(TRUE)
+        				->find(array('_id' => array('$in' => (array) $value)));
         }
         else
         {
-          // Extract just id if value is a DBRef
+        	  // Extract just id if value is a DBRef
           if(is_array($value) && isset($value['$id']))
           {
             $value = $value['$id'];
@@ -611,6 +635,9 @@ abstract class Document {
 
   /**
    * Unset a key
+   * 
+   * Note: unset() method call for _unset() is defined in __call() method since 'unset' method name
+   *       is reserved in PHP. ( Requires PHP > 5.2.3. - http://php.net/manual/en/reserved.keywords.php )
    *
    * @param   string  $name The key of the data to update (use dot notation for embedded objects)
    * @return Mongo_Odm\Document
@@ -1148,7 +1175,7 @@ abstract class Document {
     }
 
     $this->clear();
-    $this->after_delete();
+    $this->after_delete(self::SAVE_UPSERT);
 
     return $this;
   }
