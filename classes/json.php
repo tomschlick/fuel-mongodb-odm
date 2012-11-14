@@ -5,6 +5,7 @@
  * @author  Colin Mollenhour
  * @package Mongo_Database
  */
+namespace Mongo_Odm;
 
 class JSON {
 
