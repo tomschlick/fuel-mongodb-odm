@@ -212,7 +212,7 @@ class Collection implements \Iterator, \Countable {
 	public function find($query = array(), $value = NULL)
 	{
 		if ($this->_cursor)
-			throw new MongoCursorException('The cursor has already been instantiated.');
+			throw new \MongoCursorException('The cursor has already been instantiated.');
 		if (!is_array($query))
 		{
 			if ($query[0] == "{")
@@ -276,7 +276,7 @@ class Collection implements \Iterator, \Countable {
 	public function fields($fields = array(), $include = 1)
 	{
 		if ($this->_cursor)
-			throw new MongoCursorException('The cursor has already started iterating.');
+			throw new \MongoCursorException('The cursor has already started iterating.');
 
 		// Map array to hash
 		if ($fields == array_values($fields))
@@ -368,7 +368,7 @@ class Collection implements \Iterator, \Countable {
 	public function sort($fields, $direction = self::ASC)
 	{
 		if ($this->_cursor)
-			throw new MongoCursorException('The cursor has already started iterating.');
+			throw new \MongoCursorException('The cursor has already started iterating.');
 
 		if (!isset($this->_options['sort']))
 		{
@@ -473,7 +473,7 @@ class Collection implements \Iterator, \Countable {
 	{
 		if ($name != 'batchSize' && $name != 'timeout' && $this->is_iterating())
 		{
-			throw new MongoCursorException('The cursor has already started iterating.');
+			throw new \MongoCursorException('The cursor has already started iterating.');
 		}
 
 		if ($name == 'query')
@@ -509,7 +509,7 @@ class Collection implements \Iterator, \Countable {
 	{
 		if ($this->is_iterating())
 		{
-			throw new MongoCursorException('The cursor has already started iterating.');
+			throw new \MongoCursorException('The cursor has already started iterating.');
 		}
 		unset($this->_options[$name]);
 		return $this;
@@ -557,9 +557,9 @@ class Collection implements \Iterator, \Countable {
 		{
 			$this->_cursor = $this->collection()->find($this->_query, $this->_fields);
 		}
-		catch (MongoCursorException $e)
+		catch (\MongoCursorException $e)
 		{
-			throw new MongoCursorException("{$e->getMessage()}: {$this->inspect()}", $e->getCode());
+			throw new \MongoCursorException("{$e->getMessage()}: {$this->inspect()}", $e->getCode());
 		}
 		catch (MongoException $e)
 		{
@@ -1045,7 +1045,7 @@ class Collection implements \Iterator, \Countable {
 				$this->cursor()->rewind();
 			}
 		}
-		catch (MongoCursorException $e)
+		catch (\MongoCursorException $e)
 		{
 			throw new \MongoCursorException("{$e->getMessage()}: {$this->inspect()}", $e->getCode());
 		}
