@@ -483,7 +483,7 @@ abstract class Document {
         if( ! isset($this->_searches[$search])){
           trigger_error('Predefined search not found by '.get_class($this).': '.$search);
         }
-        return Mongo_Odm\Document::factory($this->_searches[$search]['model'])
+        return Document::factory($this->_searches[$search]['model'])
                 ->collection(TRUE)
                 ->find(array($this->_searches[$search]['field'] => $this->_id));
       break;
